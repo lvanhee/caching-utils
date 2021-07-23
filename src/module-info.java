@@ -1,0 +1,3 @@
+module cachingutils {
+	exports cachingutils;
+}
