@@ -39,11 +39,13 @@ public class PlainObjectFileBasedCache<T> {
 			if(cacheFile.getName().endsWith("_bk"))
 			{
 				ex.printStackTrace();
+				cacheFile.delete();
 				System.out.println("Main and backup failed, replacing by the default object:"+cacheFile+" "+cacheFile);
 			}
 			else
 			{
 				System.out.println("Issue reading the file, loading the backup version");
+				cacheFile.delete();
 				return loadFromFile(getBackupFileFrom(cacheFile), defaultSupplier);
 			}
 			
