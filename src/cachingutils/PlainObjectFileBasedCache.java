@@ -34,6 +34,10 @@ public class PlainObjectFileBasedCache<T> {
 				objectIn.close();
 				return new PlainObjectFileBasedCache<T>(cacheFile,obj);
 			}
+			else 
+			{
+				return new PlainObjectFileBasedCache<T>(cacheFile, defaultSupplier.get());
+			}
 		} catch (Exception ex) {
 
 			if(cacheFile.getName().endsWith("_bk"))
@@ -44,7 +48,7 @@ public class PlainObjectFileBasedCache<T> {
 			}
 			else
 			{
-				System.out.println("Issue reading the file, loading the backup version");
+				System.out.println("Issue reading the file, loading the backup version"+cacheFile.getAbsolutePath());
 				cacheFile.delete();
 				return loadFromFile(getBackupFileFrom(cacheFile), defaultSupplier);
 			}
@@ -61,7 +65,13 @@ public class PlainObjectFileBasedCache<T> {
 
 	public synchronized void doAndUpdate(Consumer<T> cons) {
 		cons.accept(obj);
+		updateLocalFile();
+	}
+
+	public void updateLocalFile() {
 		try {
+			if(!this.cacheFile.exists())
+				cacheFile.createNewFile();
 			FileOutputStream fileOut = new FileOutputStream(cacheFile);
 			ObjectOutputStream objectOut = new ObjectOutputStream(fileOut);
 			objectOut.writeObject(obj);

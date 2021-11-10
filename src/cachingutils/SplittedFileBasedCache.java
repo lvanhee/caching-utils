@@ -21,13 +21,15 @@ public class SplittedFileBasedCache<I,O> implements Cache<I, O> {
 	}
 
 	@Override
-	public void add(I i, O o) {
+	public synchronized void add(I i, O o) {
 		File cacheFileName = fileLocator.apply(i);
 		if(has(i))
 			throw new Error();
 		
 		BufferedWriter writer;
 		try {
+			if(!cacheFileName.getParentFile().exists())
+				cacheFileName.getParentFile().mkdirs();
 			cacheFileName.createNewFile();
 			writer = new BufferedWriter(new FileWriter(cacheFileName,StandardCharsets.ISO_8859_1));
 
