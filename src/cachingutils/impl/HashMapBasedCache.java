@@ -1,7 +1,9 @@
-package cachingutils;
+package cachingutils.impl;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import cachingutils.Cache;
 
 public class HashMapBasedCache<I,O> implements Cache<I, O> {
 

@@ -1,6 +1,6 @@
 package cachingutils.mains;
 
-import cachingutils.ExactEqualCache;
+import cachingutils.impl.ExactEqualCache;
 
 public class Example {
 	

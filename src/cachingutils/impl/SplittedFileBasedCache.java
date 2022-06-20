@@ -1,4 +1,4 @@
-package cachingutils;
+package cachingutils.impl;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.function.Function;
+
+import cachingutils.Cache;
 
 public class SplittedFileBasedCache<I,O> implements Cache<I, O> {
 	
@@ -64,6 +66,17 @@ public class SplittedFileBasedCache<I,O> implements Cache<I, O> {
 
 	public void delete(I inputPair) {
 		fileLocator.apply(inputPair).delete();
+	}
+
+	public static SplittedFileBasedCache<String, String> getStringToStringCache(File file) {
+		
+		return SplittedFileBasedCache.newInstance(x->
+		{File res = new File(file.getAbsolutePath()+"/"+x);
+		return res;
+		}
+		,
+				Function.identity(),
+				Function.identity());
 	}
 
 }

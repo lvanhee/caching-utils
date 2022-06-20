@@ -1,4 +1,4 @@
-package cachingutils;
+package cachingutils.impl;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -12,6 +12,8 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import cachingutils.Cache;
 
 public class FileBasedStringSetCache<O> implements Cache<O, Boolean>,Set<O>{
 	
@@ -32,6 +34,8 @@ public class FileBasedStringSetCache<O> implements Cache<O, Boolean>,Set<O>{
 		if(!path.toFile().exists())
 		{
 			try {
+				if(!path.getParent().toFile().exists())
+					Files.createDirectories(path.getParent());
 				path.toFile().createNewFile();
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -99,7 +103,7 @@ public class FileBasedStringSetCache<O> implements Cache<O, Boolean>,Set<O>{
 
 	@Override
 	public int size() {
-		throw new Error();
+		return allStrings.size();
 	}
 
 	@Override
@@ -145,7 +149,8 @@ public class FileBasedStringSetCache<O> implements Cache<O, Boolean>,Set<O>{
 
 	@Override
 	public boolean addAll(Collection<? extends O> c) {
-		throw new Error();
+		c.stream().forEach(x->add(x));
+		return true;
 	}
 
 	@Override
@@ -161,6 +166,11 @@ public class FileBasedStringSetCache<O> implements Cache<O, Boolean>,Set<O>{
 	@Override
 	public void clear() {
 		throw new Error();
+	}
+	
+	public String toString()
+	{
+		return this.size()+" "+this.filePath+" "+this.allStrings;
 	}
 
 }

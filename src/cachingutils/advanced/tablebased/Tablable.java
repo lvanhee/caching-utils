@@ -1,4 +1,4 @@
-package cachingutils;
+package cachingutils.advanced.tablebased;
 
 /**
  * These objects should be mappable to a table. 
