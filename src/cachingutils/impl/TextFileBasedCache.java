@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -13,6 +14,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -26,13 +29,14 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 	private static final String ITEM_SEPARATOR = "\n";
 
 	private final File fileToSaveInto;
-	private final Map<I,O> m;
+	private Map<I,O> m=null;
 	private final Function<I, String> iToString;
 	private final Function<String,I> parserStringToi;
 	private final Function<String,O> parserStringToO;
 	private final Function<O,String> oToString;
 	private final String inlineSeparator;
 	private final boolean outputBeforeInput;
+	private final AtomicBoolean isLoadingOver = new AtomicBoolean(false);
 
 	private TextFileBasedCache(File fileToSaveInto, 
 			Function<I, String> iToString,
@@ -56,32 +60,71 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 
 		try {
 			if(!fileToSaveInto.exists())
+			{
 				m = new HashMap<>();
+				isLoadingOver.set(true);
+			}
 			else
 			{
+				System.out.println("Loading:"+this.fileToSaveInto);
 				String allContents = Files.readString(this.fileToSaveInto.toPath(),StandardCharsets.ISO_8859_1);
 				
 				Set<String> allItems;
 				if(allContents.isBlank())
 					allItems = new HashSet<>();
 				else
-					allItems= Arrays.asList(allContents.split(ITEM_SEPARATOR)).stream().collect(Collectors.toSet()); 
-				m = allItems.stream().sorted()
-						//.parallelStream()
-						.collect(Collectors.toMap(
-						x->{
+					allItems= Arrays.asList(allContents.split(ITEM_SEPARATOR)).stream().collect(Collectors.toSet());
+				String regex = TextProcessingUtils.toRegex(inlineSeparator);
+				
+				Set<List<String>> splittedItems = allItems.stream().map(x->Arrays.asList(x.split(regex))).collect(Collectors.toSet());
+				
+				new Thread(()->{
+					Thread.currentThread().setName("Loading:"+fileToSaveInto);
+					ConcurrentHashMap<I, O> tmpMap = new ConcurrentHashMap<>(splittedItems.size());
+					long start = System.currentTimeMillis();
+					splittedItems.stream().forEach(x->{
+						I i = null;
+						
+						//synchronized (splittedItems) {
 							//System.out.println(x);
-							String left = x.split(TextProcessingUtils.toRegex(inlineSeparator))[inputIndex];
-							
-							return parserStringToi.apply(left);
-						},
-						x-> 
-						{
-							String[] splitted = x.split(TextProcessingUtils.toRegex(inlineSeparator));
-							if(splitted.length<2)
-								throw new Error();
-							return (O)parserStringToO.apply(splitted[outputIndex]);	
-						}));
+							String left = x.get(inputIndex);
+							 i = parserStringToi.apply(left);
+					
+							O o = parserStringToO.apply(x.get(outputIndex));
+
+							tmpMap.put(i, o);
+						
+						
+					});
+					Map<I, O> tmp2 = new HashMap<>(tmpMap.size());
+					tmp2.putAll(tmpMap);
+					m = tmp2;
+					/*m = splittedItems.parallelStream()
+							//.parallelStream()
+							.collect(Collectors.toMap(
+									x->{
+										//System.out.println(x);
+										String left = x.get(inputIndex);
+
+										return parserStringToi.apply(left);
+									},
+									x-> 
+									{
+
+										if(x.size()<2)
+											throw new Error();
+										return parserStringToO.apply(x.get(outputIndex));	
+									}));*/
+					
+					System.out.println("Pre-processed:"+this.fileToSaveInto+" "+m.size()+", time: "+((System.currentTimeMillis()-start))/1000);
+					synchronized (isLoadingOver) {
+						isLoadingOver.set(true);
+						isLoadingOver.notifyAll();
+					}
+
+				}).start();;
+
+
 			}
 
 		} catch (IOException e) {
@@ -132,6 +175,15 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 
 	@Override
 	public synchronized boolean has(I i) {
+		synchronized (isLoadingOver) {
+			while(!isLoadingOver.get())
+				try {
+					isLoadingOver.wait();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+					throw new Error();
+				}
+		}
 		return m.containsKey(i);
 	}
 
@@ -139,7 +191,7 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 	public synchronized O get(I i) {
 		return m.get(i);
 	}
-	public static <I,O> TextFileBasedCache<I, O> newInstance(File fileToSaveInto, 
+	public static  <I,O> TextFileBasedCache<I, O> newInstance(File fileToSaveInto, 
 			Function<I, String> iToString,
 			Function<String,I> parserStringToi,
 			Function<O,String> oToString,

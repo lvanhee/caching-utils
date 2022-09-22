@@ -32,10 +32,11 @@ public class SplittedFileBasedCache<I,O> implements Cache<I, O> {
 		try {
 			if(!cacheFileName.getParentFile().exists())
 				cacheFileName.getParentFile().mkdirs();
+			String translated = objectToStringTranslator.apply(o);
 			cacheFileName.createNewFile();
 			writer = new BufferedWriter(new FileWriter(cacheFileName,StandardCharsets.ISO_8859_1));
 
-			writer.write(objectToStringTranslator.apply(o));
+			writer.write(translated);
 
 			writer.close();
 		} catch (IOException e) {
