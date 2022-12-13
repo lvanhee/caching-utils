@@ -43,16 +43,17 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 			Function<String,I> parserStringToi,
 			Function<O,String> oToString,
 			Function<String,O> parserStringToO,
-			String inlineSeparator,
+			String inputToOutputSeparator,
 			boolean outputBeforeInput
 			)
 	{
+		if(inputToOutputSeparator.equals(ITEM_SEPARATOR))throw new Error("Inline separator between input and output matches the separator between io-pairs");
 		this.fileToSaveInto = fileToSaveInto;
 		this.iToString = iToString;
 		this.parserStringToi = parserStringToi;
 		this.oToString = oToString;
 		this.parserStringToO = parserStringToO;
-		this.inlineSeparator = inlineSeparator;
+		this.inlineSeparator = inputToOutputSeparator;
 		this.outputBeforeInput = outputBeforeInput;
 		
 		int inputIndex = outputBeforeInput?1:0;
@@ -74,7 +75,7 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 					allItems = new HashSet<>();
 				else
 					allItems= Arrays.asList(allContents.split(ITEM_SEPARATOR)).stream().collect(Collectors.toSet());
-				String regex = TextProcessingUtils.toRegex(inlineSeparator);
+				String regex = TextProcessingUtils.toRegex(inputToOutputSeparator);
 				
 				Set<List<String>> splittedItems = allItems.stream().map(x->Arrays.asList(x.split(regex))).collect(Collectors.toSet());
 				
@@ -157,7 +158,7 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 
 			if(translatedI.contains(inlineSeparator)||translatedO.contains(inlineSeparator)||
 					translatedI.contains("\n")||translatedO.contains("\n"))
-				throw new Error("Character used for delimitation used by the translator");
+				throw new Error("Separator used for delimitation of input and output in the file is in use in the translated strings");
 
 			String toAdd = iToString.apply(i)+inlineSeparator+oToString.apply(o)+ITEM_SEPARATOR; 
 			if(outputBeforeInput)

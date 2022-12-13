@@ -44,7 +44,7 @@ public class FileBasedStringSetCache<O> implements Cache<O, Boolean>,Set<O>{
 		}
 		try {
 			allStrings = Files.readAllLines(path, StandardCharsets.ISO_8859_1)
-					.stream()
+					.parallelStream()
 					.map(x->parser.apply(x))
 					.collect(Collectors.toSet());
 		} catch (IOException e) {

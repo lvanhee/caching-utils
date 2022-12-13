@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -85,5 +86,10 @@ public class PlainObjectFileBasedCache<T> {
 			ex.printStackTrace();
 			throw new Error();
 		}
+	}
+
+	public void update(T o) {
+		this.obj = o;
+		updateLocalFile();
 	}
 }

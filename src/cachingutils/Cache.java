@@ -1,6 +1,5 @@
 package cachingutils;
 
-import java.util.function.Function;
 
 public interface Cache<I, O>{
 	public void add(I i, O o);
