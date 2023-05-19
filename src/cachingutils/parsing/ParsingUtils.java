@@ -75,4 +75,13 @@ public class ParsingUtils {
 		return listOfStringToParsableString(s.stream().map(x->parser.apply(x)).collect(Collectors.toList()),separator);
 	}
 
+	public static Map<String, String> parseStringToMapOfStringToString(String s, String itemSeparator, String itemValueSeparator) {
+		itemSeparator = itemSeparator.replaceAll("\\|", "\\\\|");
+		List<String> str =  Arrays.asList(s.split(itemSeparator));
+		Map<String, String> res = str.stream().collect(Collectors.toMap(
+				x->x.substring(0, x.indexOf(itemValueSeparator)),
+				x->x.substring(x.indexOf(itemValueSeparator)+itemValueSeparator.length())));
+		return res;
+	}
+
 }

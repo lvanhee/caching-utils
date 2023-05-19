@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.function.Function;
 
 import cachingutils.Cache;
@@ -54,7 +55,8 @@ public class SplittedFileBasedCache<I,O> implements Cache<I, O> {
 	@Override
 	public O get(I i) {
 		try {
-			return stringTranslator.apply(Files.readString(fileLocator.apply(i).toPath(),StandardCharsets.ISO_8859_1));
+			Path p = fileLocator.apply(i).toPath().toAbsolutePath();
+			return stringTranslator.apply(Files.readString(p,StandardCharsets.ISO_8859_1));
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new Error();

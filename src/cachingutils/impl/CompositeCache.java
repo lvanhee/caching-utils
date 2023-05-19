@@ -58,4 +58,8 @@ public class CompositeCache<I,O> implements Cache<I,O> {
 		allCaches.add(0,cache);
 	}
 
+	public boolean hasInMainCache(I i) {
+		return mainCache.has(i);
+	}
+
 }
