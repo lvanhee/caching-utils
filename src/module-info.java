@@ -7,6 +7,5 @@ module cachingutils {
 	exports cachingutils.impl;
 	exports cachingutils.advanced.tablebased;
 	exports cachingutils.parsing;
-	requires textprocessing.generics;
 	
 }

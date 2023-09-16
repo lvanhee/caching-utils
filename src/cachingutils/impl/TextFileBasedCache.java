@@ -22,7 +22,6 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import cachingutils.Cache;
-import textprocessing.TextProcessingUtils;
 
 public class TextFileBasedCache<I,O> implements Cache<I, O> {
 
@@ -75,7 +74,7 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 					allItems = new HashSet<>();
 				else
 					allItems= Arrays.asList(allContents.split(ITEM_SEPARATOR)).stream().collect(Collectors.toSet());
-				String regex = TextProcessingUtils.toRegex(inputToOutputSeparator);
+				String regex = java.util.regex.Pattern.quote(inputToOutputSeparator);
 				
 				Set<List<String>> splittedItems = allItems.stream().map(x->Arrays.asList(x.split(regex))).collect(Collectors.toSet());
 				
