@@ -62,6 +62,7 @@ public class StringCacheUtils {
 
 	public static List<String> stringToListOfString(String x) {
 		if(x.equals("[]"))return new ArrayList<>();
+		if(x.equals("")) return new ArrayList<>();
 		return Arrays.asList(x.split(","));
 	}
 

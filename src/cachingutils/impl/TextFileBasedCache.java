@@ -8,6 +8,7 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -75,26 +76,29 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 				else
 					allItems= Arrays.asList(allContents.split(ITEM_SEPARATOR)).stream().collect(Collectors.toSet());
 				String regex = java.util.regex.Pattern.quote(inputToOutputSeparator);
-				
+
 				Set<List<String>> splittedItems = allItems.stream().map(x->Arrays.asList(x.split(regex))).collect(Collectors.toSet());
-				
+
 				new Thread(()->{
 					Thread.currentThread().setName("Loading:"+fileToSaveInto);
 					ConcurrentHashMap<I, O> tmpMap = new ConcurrentHashMap<>(splittedItems.size());
 					long start = System.currentTimeMillis();
 					splittedItems.stream().forEach(x->{
 						I i = null;
-						
-						//synchronized (splittedItems) {
-							//System.out.println(x);
-							String left = x.get(inputIndex);
-							 i = parserStringToi.apply(left);
-					
-							O o = parserStringToO.apply(x.get(outputIndex));
 
-							tmpMap.put(i, o);
-						
-						
+						//synchronized (splittedItems) {
+						//System.out.println(x);
+						String left = x.get(inputIndex);
+						i = parserStringToi.apply(left);
+
+						O o = null;
+						if(x.size()==1)
+							o = parserStringToO.apply("");
+						else o = parserStringToO.apply(x.get(outputIndex));
+
+						tmpMap.put(i, o);
+
+
 					});
 					Map<I, O> tmp2 = new HashMap<>(tmpMap.size());
 					tmp2.putAll(tmpMap);

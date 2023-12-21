@@ -10,6 +10,7 @@ public class HashMapBasedCache<I,O> implements Cache<I, O> {
 	private  final Map<Object,Object> m = new HashMap<>();
 	@Override
 	public synchronized void add(I i, O o) {
+	//	System.out.println(m.size());
 		m.put(i,o);
 	}
 

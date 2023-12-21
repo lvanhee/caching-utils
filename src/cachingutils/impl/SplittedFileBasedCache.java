@@ -49,6 +49,7 @@ public class SplittedFileBasedCache<I,O> implements Cache<I, O> {
 
 	@Override
 	public boolean has(I i) {
+		//System.out.println("Test "+fileLocator.apply(i).exists()+" "+i);
 		return fileLocator.apply(i).exists();
 	}
 

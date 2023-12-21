@@ -42,6 +42,7 @@ public class ParsingUtils {
 	}
 	
 	public static<O> String toParsableString(List<O> l, Function<O, String>individualParser, String separator) {
+		if(l.isEmpty())return "";
 		return l.stream().map(
 				x->{
 					String res = individualParser.apply(x);
@@ -79,7 +80,10 @@ public class ParsingUtils {
 		itemSeparator = itemSeparator.replaceAll("\\|", "\\\\|");
 		List<String> str =  Arrays.asList(s.split(itemSeparator));
 		Map<String, String> res = str.stream().collect(Collectors.toMap(
-				x->x.substring(0, x.indexOf(itemValueSeparator)),
+				x->{
+					if(!x.contains(itemValueSeparator))
+						throw new Error();
+					return x.substring(0, x.indexOf(itemValueSeparator));},
 				x->x.substring(x.indexOf(itemValueSeparator)+itemValueSeparator.length())));
 		return res;
 	}
