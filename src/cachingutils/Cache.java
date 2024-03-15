@@ -12,10 +12,10 @@ public interface Cache<I, O>{
 	public O get(I i);
 	public Set<I> getAllCached();
 	public void delete(I i);
-	
+
 	public static<I,O> void transferCache(Cache<I, O> from,
 			Cache<I, O> to, boolean deleteOldCache) {
-		
+
 		AtomicInteger remaining = new AtomicInteger(from.getAllCached().size());
 		Set<I> allCached = from.getAllCached();
 		for(I s:allCached)
@@ -23,19 +23,19 @@ public interface Cache<I, O>{
 			if(!to.has(s))
 			{
 				try {
-				O r = from.get(s);
-				to.add(s, r);
+					O r = from.get(s);
+					to.add(s, r);
 				}
 				catch (Error e) {
 					if(!e.toString().contains("THE INPUT FILE CONTAINS AN AUTHOR DESCRIPTION INSTEAD OF A REFERENCE DESCRIPTION")&&
 							!e.toString().contains("Not an author description")&&
 							!e.toString().contains("EMPTY FILE")&&
 							!e.toString().contains("Author description does not contain scopus id"))
-{
+					{
 						e.printStackTrace();
 						throw new Error();
 					}
-						
+
 				}
 			}
 			from.delete(s);

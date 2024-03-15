@@ -16,7 +16,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import cachingutils.Cache;
-import scientigrapher.model.references.Reference;
 
 public class FilesInOneFolderBasedCache<I,O> implements Cache<I, O>{
 	
@@ -26,6 +25,8 @@ public class FilesInOneFolderBasedCache<I,O> implements Cache<I, O>{
 	private final Function<O,String> objectToStringTranslator;
 	private final File targetFolder;
 	
+	private final boolean isEmptyFilesAccepted;
+	
 	private final Set<I> existingObjects;
 	
 	private FilesInOneFolderBasedCache(
@@ -33,12 +34,14 @@ public class FilesInOneFolderBasedCache<I,O> implements Cache<I, O>{
 			Function<String, I> filenameToObjectLocator, 
 			Function<O,String> objectToStringTranslator, 
 			Function<String, O> stringTranslator,
+			boolean isEmptyFilesAccepted,
 			File targetFolder) {
 		this.fileLocator = fileLocator;
 		this.objectToStringTranslator = objectToStringTranslator;
 		this.stringTranslator = stringTranslator;
 		this.fileNameToObject = filenameToObjectLocator;
 		this.targetFolder = targetFolder;
+		this.isEmptyFilesAccepted = isEmptyFilesAccepted;
 		if(!targetFolder.exists())
 			targetFolder.mkdirs();
 		
@@ -78,7 +81,7 @@ public class FilesInOneFolderBasedCache<I,O> implements Cache<I, O>{
 				cacheFileName.getParentFile().mkdirs();
 			String translated = objectToStringTranslator.apply(o);
 			cacheFileName.createNewFile();
-			writer = new BufferedWriter(new FileWriter(cacheFileName,StandardCharsets.ISO_8859_1));
+			writer = new BufferedWriter(new FileWriter(cacheFileName,StandardCharsets.UTF_8));
 
 			writer.write(translated);
 
@@ -92,18 +95,52 @@ public class FilesInOneFolderBasedCache<I,O> implements Cache<I, O>{
 
 	@Override
 	public boolean has(I i) {
-		return existingObjects.contains(i);
+		boolean doFileExist = existingObjects.contains(i);
+		if(!doFileExist)return false;
+		if(!isEmptyFilesAccepted && getPathToObject(i).toFile().length()==0)
+		{
+			getPathToObject(i).toFile().delete();
+			return false;
+		}
+		return true;
 	}
 
 	@Override
 	public O get(I i) {
+		if(!has(i))
+			throw new Error();
+		Path p = getPathToObject(i);
+		String s = null;
 		try {
-			Path p = Paths.get(targetFolder.getAbsolutePath()+"/"+fileLocator.apply(i)).toAbsolutePath();
-			return stringTranslator.apply(Files.readString(p,StandardCharsets.ISO_8859_1));
+			s = Files.readString(p,StandardCharsets.UTF_8);
+			
+			
+			O res = stringTranslator.apply(Files.readString(p,StandardCharsets.UTF_8));
+			
+			//System.out.println(i+" worked ok!");
+			return res;
+		} catch (IOException e) {
+			//e.printStackTrace();
+			if(s!=null&&s.isEmpty())
+				this.delete(i);
+		}
+		
+		//quickfix for returning old values one last time and then deleting them
+		try {
+			O res = stringTranslator.apply(Files.readString(p,StandardCharsets.ISO_8859_1));
+			
+			
+			System.out.println("Deleting:"+i+" "+res);
+			this.delete(i);
+			return res;
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new Error();
 		}
+	}
+
+	private Path getPathToObject(I i) {
+		return Paths.get(targetFolder.getAbsolutePath()+"/"+fileLocator.apply(i)).toAbsolutePath();
 	}
 
 	public static<I,O> FilesInOneFolderBasedCache<I, O> newInstance(
@@ -112,7 +149,17 @@ public class FilesInOneFolderBasedCache<I,O> implements Cache<I, O>{
 			Function<O,String> objectToStringTranslator, 
 			Function<String, O> stringTranslator,
 			File targetFolder) {
-		return new FilesInOneFolderBasedCache<>(fileLocator, filenameToObjectLocator, objectToStringTranslator, stringTranslator, targetFolder);
+		return new FilesInOneFolderBasedCache<>(fileLocator, filenameToObjectLocator, objectToStringTranslator, stringTranslator, true, targetFolder);
+	}
+	
+	public static<I,O> FilesInOneFolderBasedCache<I, O> newInstance(
+			Function<I, String> fileLocator, 
+			Function<String, I> filenameToObjectLocator, 
+			Function<O,String> objectToStringTranslator, 
+			Function<String, O> stringTranslator,
+			boolean isEmptyFileAccepted,
+			File targetFolder) {
+		return new FilesInOneFolderBasedCache<>(fileLocator, filenameToObjectLocator, objectToStringTranslator, stringTranslator, isEmptyFileAccepted, targetFolder);
 	}
 
 	public void delete(I i) {

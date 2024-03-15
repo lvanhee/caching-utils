@@ -2,6 +2,7 @@ package cachingutils.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import cachingutils.Cache;
 
@@ -50,6 +51,18 @@ public class ExactEqualCache<Key, Val> implements Cache<Key, Val>{
 		}
 		throw new Error();
 	}
+
+	@Override
+	public Set<Key> getAllCached() {
+		throw new Error();
+	}
+
+	@Override
+	public void delete(Key i) {
+		throw new Error();
+	}
+	
+	
 	
 	
 

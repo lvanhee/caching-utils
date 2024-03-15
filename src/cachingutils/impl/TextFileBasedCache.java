@@ -67,8 +67,8 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 			}
 			else
 			{
-				System.out.println("Loading:"+this.fileToSaveInto);
-				String allContents = Files.readString(this.fileToSaveInto.toPath(),StandardCharsets.ISO_8859_1);
+				System.out.println("Loading:"+this.fileToSaveInto.getAbsolutePath());
+				String allContents = Files.readString(this.fileToSaveInto.toPath(),StandardCharsets.UTF_8);
 				
 				Set<String> allItems;
 				if(allContents.isBlank())
@@ -80,7 +80,7 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 				Set<List<String>> splittedItems = allItems.stream().map(x->Arrays.asList(x.split(regex))).collect(Collectors.toSet());
 
 				new Thread(()->{
-					Thread.currentThread().setName("Loading:"+fileToSaveInto);
+					Thread.currentThread().setName("Loading:"+fileToSaveInto.getAbsolutePath());
 					ConcurrentHashMap<I, O> tmpMap = new ConcurrentHashMap<>(splittedItems.size());
 					long start = System.currentTimeMillis();
 					splittedItems.stream().forEach(x->{
@@ -153,7 +153,7 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 
 
 
-			fw = new FileWriter(fileToSaveInto, StandardCharsets.ISO_8859_1, true);
+			fw = new FileWriter(fileToSaveInto, StandardCharsets.UTF_8, true);
 			BufferedWriter bw = new BufferedWriter(fw);
 
 			String translatedI = iToString.apply(i);
@@ -205,7 +205,8 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 		return new TextFileBasedCache<>(fileToSaveInto, iToString, parserStringToi, oToString, parserStringToO, inlineSeparator,false);
 	}
 	
-	public static <I,O> TextFileBasedCache<I, O> newInstance(File fileToSaveInto, 
+	public static <I,O> TextFileBasedCache<I, O> newInstance(
+			File fileToSaveInto, 
 			Function<I, String> iToString,
 			Function<String,I> parserStringToi,
 			Function<O,String> oToString,
@@ -277,5 +278,16 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 			replace(i, o);
 		else add(i, o);
 	}
+	
+	@Override
+	public Set<I> getAllCached() {
+		throw new Error();
+	}
+
+	@Override
+	public void delete(I i) {
+		throw new Error();
+	}
+	
 
 }

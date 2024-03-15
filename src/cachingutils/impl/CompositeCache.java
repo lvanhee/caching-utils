@@ -62,4 +62,14 @@ public class CompositeCache<I,O> implements Cache<I,O> {
 		return mainCache.has(i);
 	}
 
+	@Override
+	public Set<I> getAllCached() {
+		throw new Error();
+	}
+
+	@Override
+	public void delete(I i) {
+		throw new Error();
+	}
+
 }

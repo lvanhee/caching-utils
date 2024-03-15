@@ -8,4 +8,6 @@ module cachingutils {
 	exports cachingutils.advanced.tablebased;
 	exports cachingutils.parsing;
 	
+	requires com.fasterxml.jackson.core;
+	requires com.fasterxml.jackson.databind;
 }

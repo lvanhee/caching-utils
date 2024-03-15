@@ -172,5 +172,16 @@ public class FileBasedStringSetCache<O> implements Cache<O, Boolean>,Set<O>{
 	{
 		return this.size()+" "+this.filePath+" "+this.allStrings;
 	}
+	
+	@Override
+	public Set<O> getAllCached() {
+		throw new Error();
+	}
+
+	@Override
+	public void delete(O i) {
+		throw new Error();
+	}
+	
 
 }

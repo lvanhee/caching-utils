@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
 import java.util.function.Function;
 
 import cachingutils.Cache;
@@ -81,6 +82,11 @@ public class SplittedFileBasedCache<I,O> implements Cache<I, O> {
 		,
 				Function.identity(),
 				Function.identity());
+	}
+
+	@Override
+	public Set<I> getAllCached() {
+		throw new Error();
 	}
 
 }

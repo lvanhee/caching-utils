@@ -2,6 +2,7 @@ package cachingutils.impl;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import cachingutils.Cache;
 
@@ -27,5 +28,16 @@ public class HashMapBasedCache<I,O> implements Cache<I, O> {
 	public synchronized static<I,O> Cache<I,O> newInstance() {
 		return new HashMapBasedCache<>();
 	}
+	
+	@Override
+	public Set<I> getAllCached() {
+		throw new Error();
+	}
+
+	@Override
+	public void delete(I i) {
+		throw new Error();
+	}
+	
 
 }

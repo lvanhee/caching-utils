@@ -9,6 +9,9 @@ import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class ParsingUtils {
 	
 	private static final String DEFAULT_STRING_SEPARATOR = ",";
@@ -26,6 +29,36 @@ public class ParsingUtils {
 
 		return input.keySet().stream().map(x->x+itemToKeySeparator+input.get(x))
 				.reduce("", (x,y)->x+itemSeparator+y).substring(itemSeparator.length());
+	}
+	
+	public static String mapToParseableJsonString(Map<String, String> input) {
+		ObjectMapper objectMapper = new ObjectMapper();
+		try {
+            // Convert map to JSON string
+            String jsonString = objectMapper.writeValueAsString(input);
+
+            return jsonString;
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            throw new Error();
+        }
+	}
+	
+	public static Map<String, String> jsonStringToParseableMap(String input)
+	{
+
+        // Create ObjectMapper
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try {
+            // Convert JSON string to map
+            Map<String, String> myMap = objectMapper.readValue(input, Map.class);
+
+            return myMap;
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            throw new Error();
+        }
 	}
 
 	public static  String listOfStringToParsableString(List<String> x) {

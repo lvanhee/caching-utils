@@ -1,6 +1,7 @@
 package cachingutils.advanced.localdatabase;
 
 import java.net.URL;
+import java.util.Set;
 import java.util.function.Function;
 
 import cachingutils.Cache;
@@ -45,6 +46,17 @@ public class LocalDatabaseImpl<I,O> implements AutofillLocalDatabase<I, O> {
 	public static<I,O> AutofillLocalDatabase<I, O> newInstance(Cache<I, O> cache, Function<I, AttemptOutcome<O>>filler) {
 		return new LocalDatabaseImpl<>(cache, filler);
 	}
+	
+	@Override
+	public Set<I> getAllCached() {
+		throw new Error();
+	}
+
+	@Override
+	public void delete(I i) {
+		throw new Error();
+	}
+	
 	
 	
 }
