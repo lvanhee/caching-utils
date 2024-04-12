@@ -97,11 +97,11 @@ public class FilesInOneFolderBasedCache<I,O> implements Cache<I, O>{
 	public boolean has(I i) {
 		boolean doFileExist = existingObjects.contains(i);
 		if(!doFileExist)return false;
-		if(!isEmptyFilesAccepted && getPathToObject(i).toFile().length()==0)
+		/*if(!isEmptyFilesAccepted && getPathToObject(i).toFile().length()==0)
 		{
 			getPathToObject(i).toFile().delete();
 			return false;
-		}
+		}*/
 		return true;
 	}
 
@@ -114,6 +114,10 @@ public class FilesInOneFolderBasedCache<I,O> implements Cache<I, O>{
 		try {
 			s = Files.readString(p,StandardCharsets.UTF_8);
 			
+			if(!isEmptyFilesAccepted && s!=null&&s.isEmpty()) {
+				this.delete(i);
+				throw new Error();
+			}
 			
 			O res = stringTranslator.apply(Files.readString(p,StandardCharsets.UTF_8));
 			
@@ -149,7 +153,7 @@ public class FilesInOneFolderBasedCache<I,O> implements Cache<I, O>{
 			Function<O,String> objectToStringTranslator, 
 			Function<String, O> stringTranslator,
 			File targetFolder) {
-		return new FilesInOneFolderBasedCache<>(fileLocator, filenameToObjectLocator, objectToStringTranslator, stringTranslator, true, targetFolder);
+		return new FilesInOneFolderBasedCache<>(fileLocator, filenameToObjectLocator, objectToStringTranslator, stringTranslator, false, targetFolder);
 	}
 	
 	public static<I,O> FilesInOneFolderBasedCache<I, O> newInstance(

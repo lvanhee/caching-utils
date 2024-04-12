@@ -25,6 +25,8 @@ import java.util.stream.Collectors;
 import cachingutils.Cache;
 
 public class TextFileBasedCache<I,O> implements Cache<I, O> {
+	
+	private enum ExportMode{IMMEDIATE, REGULAR}
 
 	private static final String ITEM_SEPARATOR = "\n";
 
@@ -37,6 +39,10 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 	private final String inlineSeparator;
 	private final boolean outputBeforeInput;
 	private final AtomicBoolean isLoadingOver = new AtomicBoolean(false);
+	
+	private final ExportMode exportMode;
+	
+	private final Map<I,O> toExportInNextFlush = new HashMap<>();
 
 	private TextFileBasedCache(File fileToSaveInto, 
 			Function<I, String> iToString,
@@ -44,7 +50,8 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 			Function<O,String> oToString,
 			Function<String,O> parserStringToO,
 			String inputToOutputSeparator,
-			boolean outputBeforeInput
+			boolean outputBeforeInput,
+			ExportMode exportMode
 			)
 	{
 		if(inputToOutputSeparator.equals(ITEM_SEPARATOR))throw new Error("Inline separator between input and output matches the separator between io-pairs");
@@ -55,6 +62,7 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 		this.parserStringToO = parserStringToO;
 		this.inlineSeparator = inputToOutputSeparator;
 		this.outputBeforeInput = outputBeforeInput;
+		this.exportMode = exportMode;
 		
 		int inputIndex = outputBeforeInput?1:0;
 		int outputIndex = 1-inputIndex;
@@ -136,26 +144,61 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 			throw new Error();
 		}
 	}
+	
+	
+	private Thread waitForCompletion = null; 
 	@Override
 	public synchronized void add(I i, O o) {
 		if(m.containsKey(i))
 			if(!m.get(i).equals(o))
 				throw new Error();
+		
+		m.put(i, o);
+		toExportInNextFlush.put(i, o);
+		
 
-		try {
-			if(!fileToSaveInto.exists())
-			{
-				Files.createDirectories(Paths.get(fileToSaveInto.getParent()));
-				fileToSaveInto.createNewFile();
+		if(exportMode.equals(ExportMode.IMMEDIATE))
+		{
+			flushNewInput();
+		}
+		else {
+
+			if(waitForCompletion==null || !waitForCompletion.isAlive()) {
+				waitForCompletion = new Thread(()->{
+					try {
+						//System.out.println("Waiting before flushing");
+						Thread.currentThread().setName("Waiting before flushing");
+						Thread.sleep(5000);
+						//System.out.println("Flushing");
+						flushNewInput();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				});
+				waitForCompletion.start();
 			}
+		}
 
-			FileWriter fw;
+	}
 
+	private synchronized void flushNewInput() {
+		StringBuilder strToExport = new StringBuilder();
+		
+		
+		if(!fileToSaveInto.exists())
+		{
+			try {
+				Files.createDirectories(Paths.get(fileToSaveInto.getParent()));
+			fileToSaveInto.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+				throw new Error();
+			}
+		}
 
-
-			fw = new FileWriter(fileToSaveInto, StandardCharsets.UTF_8, true);
-			BufferedWriter bw = new BufferedWriter(fw);
-
+		for(I i:toExportInNextFlush.keySet())
+		{
+			O o = toExportInNextFlush.get(i);
 			String translatedI = iToString.apply(i);
 			String translatedO = oToString.apply(o);
 
@@ -166,15 +209,22 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 			String toAdd = iToString.apply(i)+inlineSeparator+oToString.apply(o)+ITEM_SEPARATOR; 
 			if(outputBeforeInput)
 				toAdd = oToString.apply(o)+inlineSeparator+iToString.apply(i)+ITEM_SEPARATOR;
-			bw.write(toAdd);
-			bw.close();   
+			
+			strToExport.append(toAdd);
+ 
+
+		}
+		try {
+			FileWriter fw = new FileWriter(fileToSaveInto, StandardCharsets.UTF_8, true);
+			BufferedWriter bw = new BufferedWriter(fw);
+			bw.write(strToExport.toString());
+			bw.close();  
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new Error();
 		}
-		
-		m.put(i,o);
 
+		toExportInNextFlush.clear();
 	}
 
 	@Override
@@ -202,7 +252,7 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 			Function<String,O> parserStringToO,
 			String inlineSeparator
 			) {
-		return new TextFileBasedCache<>(fileToSaveInto, iToString, parserStringToi, oToString, parserStringToO, inlineSeparator,false);
+		return new TextFileBasedCache<>(fileToSaveInto, iToString, parserStringToi, oToString, parserStringToO, inlineSeparator,false, ExportMode.REGULAR);
 	}
 	
 	public static <I,O> TextFileBasedCache<I, O> newInstance(
@@ -213,7 +263,7 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 			Function<String,O> parserStringToO,
 			String inlineSeparator, boolean flipped
 			) {
-		return new TextFileBasedCache<>(fileToSaveInto, iToString, parserStringToi, oToString, parserStringToO, inlineSeparator,flipped);
+		return new TextFileBasedCache<>(fileToSaveInto, iToString, parserStringToi, oToString, parserStringToO, inlineSeparator,flipped, ExportMode.REGULAR);
 	}
 
 	private static final AtomicBoolean needsToBeFlushedOut = new AtomicBoolean(false);
@@ -287,6 +337,10 @@ public class TextFileBasedCache<I,O> implements Cache<I, O> {
 	@Override
 	public void delete(I i) {
 		throw new Error();
+	}
+
+	public File getFile() {
+		return fileToSaveInto;
 	}
 	
 
